@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Notification Form</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            perspective: 1000px;
+            transition: background-color 0.3s;
+        }
+
+        body.dark-mode {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+            transform-style: preserve-3d;
+            transition: transform 0.6s, background-color 0.3s, color 0.3s;
+        }
+
+        .container.dark-mode {
+            background: #444;
+            color: #fff;
+        }
+
+        .container.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .form-container, .flip-container {
+            backface-visibility: hidden;
+        }
+
+        .flip-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 8px;
+            transform: rotateY(180deg);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: inherit;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: inherit;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #007BFF;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+            transform: scale(1.05);
+        }
+
+        small.error {
+            color: red;
+            display: none;
+        }
+
+        small.tooltip {
+            display: none;
+            color: #777;
+            font-size: 12px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        button {
+            width: 48%;
+            padding: 10px;
+            background-color: #007BFF;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .notification {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .notification.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .notification.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .copy-button {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #28a745;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            display: none;
+        }
+
+        .copy-button:hover {
+            background-color: #218838;
+        }
+
+        .spinner {
+            display: none;
+            margin-top: 20px;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007BFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 5px;
+            background: #ddd;
+            border-radius: 3px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar::before {
+            content: '';
+            display: block;
+            height: 100%;
+            background: #007BFF;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .flip-button {
+            padding: 10px;
+            background-color: #ffc107;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .flip-button:hover {
+            background-color: #e0a800;
+        }
+
+        .dark-mode-toggle {
+            padding: 10px;
+            background-color: #6c757d;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .dark-mode-toggle:hover {
+            background-color: #5a6268;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .material-icons {
+            vertical-align: middle;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <form id="notificationForm">
+                <h2>User Notification Form</h2>
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="form-section active" id="section1">
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" name="name" required>
+                        <small class="tooltip" id="nameTooltip">Please enter your full name.</small>
+                        <small class="error" id="nameError"></small>
+                    </div>
+                    <button type="button" class="next-button" onclick="nextSection(1)">Next</button>
+                </div>
+                <div class="form-section" id="section2">
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" name="email" required>
+                        <small class="tooltip" id="emailTooltip">We'll never share your email.</small>
+                        <small class="error" id="emailError"></small>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Select Date:</label>
+                        <input type="text" id="date" name="date" required>
+                        <small class="tooltip" id="dateTooltip">Pick a date for the notification.</small>
+                        <small class="error" id="dateError"></small>
+                    </div>
+                    <button type="button" class="prev-button" onclick="prevSection(2)">Previous</button>
+                    <button type="button" class="next-button" onclick="nextSection(2)">Next</button>
+                </div>
+                <div class="form-section" id="section3">
+                    <div class="form-group">
+                        <label for="message">Message:</label>
+                        <textarea id="message" name="message" required></textarea>
+                        <small class="tooltip" id="messageTooltip">Enter your message here.</small>
+                        <small class="error" id="messageError"></small>
+                    </div>
+                    <button type="button" class="prev-button" onclick="prevSection(3)">Previous</button>
+                    <button type="submit">Submit</button>
+                </div>
+            </form>
+            <div id="notification" class="notification"></div>
+            <button id="copyButton" class="copy-button">Copy to Clipboard</button>
+            <div id="spinner" class="spinner"></div>
+        </div>
+        <div class="flip-container">
+            <button id="flipButton" class="flip-button">Flip Form</button>
+        </div>
+        <button id="darkModeToggle" class="dark-mode-toggle">Toggle Dark Mode</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.getElementById('notificationForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            clearErrors();
+            showSpinner();
+
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const date = document.getElementById('date').value;
+            const message = document.getElementById('message').value;
+
+            if (validateForm(name, email, date, message)) {
+                const notification = document.getElementById('notification');
+                
+                // Get browser properties using navigator object
+                const browserName = navigator.userAgentData.brands.map(brand => brand.brand).join(', ');
+                const platform = navigator.userAgentData.platform || navigator.platform;
+
+                notification.className = 'notification success';
+                notification.innerHTML = `
+                    <p>Thank you, ${name}. Your message has been received.</p>
+                    <p><strong>Browser Info:</strong></p>
+                    <ul>
+                        <li>Browser Name: ${browserName}</li>
+                        <li>Platform: ${platform}</li>
+                        <li>Notification Date: ${date}</li>
+                    </ul>
+                `;
+                notification.style.display = 'block';
+                document.getElementById('copyButton').style.display = 'block';
+            } else {
+                const notification = document.getElementById('notification');
+                notification.className = 'notification error';
+                notification.innerHTML = '<p>Please fill in all fields correctly.</p>';
+                notification.style.display = 'block';
+            }
+            hideSpinner();
+        });
+
+        document.getElementById('copyButton').addEventListener('click', function() {
+            const notificationText = document.getElementById('notification').innerText;
+            navigator.clipboard.writeText(notificationText).then(() => {
+                alert('Notification copied to clipboard');
+            });
+        });
+
+        document.getElementById('flipButton').addEventListener('click', function() {
+            const container = document.querySelector('.container');
+            container.classList.toggle('flipped');
+        });
+
+        document.getElementById('darkModeToggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            document.querySelector('.container').classList.toggle('dark-mode');
+        });
+
+        function nextSection(currentSection) {
+            const current = document.getElementById(`section${currentSection}`);
+            const next = document.getElementById(`section${currentSection + 1}`);
+            current.classList.remove('active');
+            next.classList.add('active');
+            updateProgressBar(currentSection + 1);
+        }
+
+        function prevSection(currentSection) {
+            const current = document.getElementById(`section${currentSection}`);
+            const prev = document.getElementById(`section${currentSection - 1}`);
+            current.classList.remove('active');
+            prev.classList.add('active');
+            updateProgressBar(currentSection - 1);
+        }
+
+        function updateProgressBar(section) {
+            const progressBar = document.getElementById('progressBar');
+            const percentage = (section / 3) * 100;
+            progressBar.style.setProperty('--width', `${percentage}%`);
+        }
+
+        function validateForm(name, email, date, message) {
+            let isValid = true;
+
+            if (!name) {
+                showError('nameError', 'Name is required');
+                isValid = false;
+            }
+
+            if (!email || !validateEmail(email)) {
+                showError('emailError', 'Valid email is required');
+                isValid = false;
+            }
+
+            if (!date) {
+                showError('dateError', 'Date is required');
+                isValid = false;
+            }
+
+            if (!message) {
+                showError('messageError', 'Message is required');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function showError(id, message) {
+            const errorElement = document.getElementById(id);
+            errorElement.innerText = message;
+            errorElement.style.display = 'block';
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error').forEach(element => {
+                element.style.display = 'none';
+            });
+        }
+
+        function validateEmail(email) {
+            const re = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+            return re.test(email);
+        }
+
+        function showSpinner() {
+            document.getElementById('spinner').style.display = 'block';
+        }
+
+        function hideSpinner() {
+            document.getElementById('spinner').style.display = 'none';
+        }
+
+        // Initialize Flatpickr
+        flatpickr("#date", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            altInput: true,
+            altFormat: "F j, Y (h:i K)"
+        });
+
+        // Add focus and blur event listeners to inputs
+        document.querySelectorAll('input, textarea').forEach(element => {
+            element.addEventListener('focus', function() {
+                this.classList.add('focusInput');
+                document.getElementById(this.id + 'Tooltip').style.display = 'block';
+            });
+
+            element.addEventListener('blur', function() {
+                this.classList.remove('focusInput');
+                document.getElementById(this.id + 'Tooltip').style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
